@@ -12,11 +12,7 @@ import HomePage from "../components/HomePage";
 import firebase from "../firebase/firebase";
 
 class HomePageContainer extends React.Component {
-  componentWillMount = () => {
-    this.getSummoner();
-  };
-
-  getSummoner = () => {
+  getSummoners = () => {
     const ranked = "RANKED_SOLO_5x5";
     const uri = `/lol/league/v4/challengerleagues/by-queue/${ranked}/?api_key=${process.env.REACT_APP_LEAGUE_API_KEY}`;
     let promise = Promise.resolve();
@@ -55,29 +51,14 @@ class HomePageContainer extends React.Component {
             });
           }));
         });
-        // this.props.addSummoner(newData);
       })
       .catch(e => {
         console.log(e);
       });
   };
 
-  getAccountId = summonerId => {
-    const summonerUri = `/lol/summoner/v4/summoners/${summonerId}/?api_key=${process.env.REACT_APP_LEAGUE_API_KEY}`;
-    let accountId = "";
-    axios(summonerUri)
-      .then(result => {
-        accountId = result.data.accountId;
-        console.log(accountId);
-      })
-      .catch(e => {
-        console.log("summoner", e);
-      });
-    return accountId;
-  };
-
   render() {
-    return <HomePage {...this.props} />;
+    return <HomePage {...this.props} getSummoners={this.getSummoners} />;
   }
 }
 
