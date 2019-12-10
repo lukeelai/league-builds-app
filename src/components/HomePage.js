@@ -6,6 +6,7 @@ const HomePage = props => {
     <div>
       <h1>Home</h1>
       <Button onClick={props.getSummoners}>Refresh</Button>
+      <Button onClick={props.getMatches}>Matches</Button>
     </div>
   );
 };

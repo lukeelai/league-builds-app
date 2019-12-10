@@ -42,7 +42,7 @@ class HomePageContainer extends React.Component {
                     summonerId: summoner.summonerId,
                     accountId: result.data.accountId
                   });
-                  this.addToFirebase(
+                  this.addFirebaseAccount(
                     summoner.summonerName,
                     summoner.summonerId,
                     result.data.accountId
@@ -62,7 +62,7 @@ class HomePageContainer extends React.Component {
       });
   };
 
-  addToFirebase = (summonerName, summonerId, accountId) => {
+  addFirebaseAccount = (summonerName, summonerId, accountId) => {
     firebase
       .firestore()
       .collection("challenger")
@@ -76,23 +76,76 @@ class HomePageContainer extends React.Component {
         { merge: true }
       );
   };
-  getMatches = accountId => {
-    if (this.props.summoner > 1) {
+  addFirebaseMatch = ({
+    lane,
+    gameId,
+    champion,
+    platformId,
+    timestamp,
+    queue,
+    role,
+    season,
+    summonerName,
+    accountId
+  }) => {
+    firebase
+      .firestore()
+      .collection("matches")
+      .doc()
+      .set(
+        {
+          lane,
+          gameId,
+          champion,
+          platformId,
+          timestamp,
+          queue,
+          role,
+          season,
+          summonerName,
+          accountId
+        },
+        { merge: true }
+      );
+  };
+
+  getMatches = () => {
+    let index, totalGames;
+    console.log(this.props.summoner.length);
+    firebase.firestore().settings({ timestampsInSnapshots: true });
+    let promise = Promise.resolve();
+    if (this.props.summoner.length > 1) {
       this.props.summoner.map(summoner => {
-        const uri = `/lol/match/v4/matchlists/by-account/${summoner.accountId}/?api_key=${process.env.REACT_APP_LEAGUE_API_KEY}`;
-        return axios(uri)
-          .then(result => {
-            console.log(result.data);
-          })
-          .catch(e => {
-            console.log(e);
+        return (promise = promise.then(() => {
+          return new Promise(resolve => {
+            index = 0;
+            let matchUri = `/lol/match/v4/matchlists/by-account/${summoner.accountId}/?beginIndex=${index}&api_key=${process.env.REACT_APP_LEAGUE_API_KEY}`;
+            axios(matchUri)
+              .then(result => {
+                index = result.data.endIndex;
+                totalGames = result.data.totalGames;
+                return result.data.matches.map(match => {
+                  match.summonerName = summoner.summonerName;
+                  match.accountId = summoner.accountId;
+                  return this.addFirebaseMatch(match);
+                });
+              })
+              .catch(e => console.log(e));
+            setTimeout(resolve, 2000);
           });
+        }));
       });
     }
   };
 
   render() {
-    return <HomePage {...this.props} getSummoners={this.getSummoners} />;
+    return (
+      <HomePage
+        {...this.props}
+        getSummoners={this.getSummoners}
+        getMatches={this.getMatches}
+      />
+    );
   }
 }
 
