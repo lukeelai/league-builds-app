@@ -19,26 +19,43 @@ class HomePageContainer extends React.Component {
   getSummoner = () => {
     const ranked = "RANKED_SOLO_5x5";
     const uri = `/lol/league/v4/challengerleagues/by-queue/${ranked}/?api_key=${process.env.REACT_APP_LEAGUE_API_KEY}`;
+    let promise = Promise.resolve();
+    const db = firebase.firestore();
+    db.settings({ timestampsInSnapshots: true });
     axios(uri)
       .then(result => {
-        const newData = result.data.entries.map(summoner => {
-          const db = firebase.firestore();
-          db.settings({ timestampsInSnapshots: true });
-          let setDoc = db
-            .collection("challenger")
-            .doc(summoner.summonerName)
-            .set({
-              summonerName: summoner.summonerName,
-              summonerId: summoner.summonerId,
-              accountId: ""
+        result.data.entries.map(summoner => {
+          return (promise = promise.then(() => {
+            return new Promise(resolve => {
+              const summonerUri = `/lol/summoner/v4/summoners/${summoner.summonerId}/?api_key=${process.env.REACT_APP_LEAGUE_API_KEY}`;
+              axios(summonerUri)
+                .then(result => {
+                  this.props.addSummoner({
+                    summonerName: summoner.summonerName,
+                    summonerId: summoner.summonerId,
+                    accountId: result.data.accountId
+                  });
+
+                  db.collection("challenger")
+                    .doc(summoner.summonerName)
+                    .set(
+                      {
+                        summonerName: summoner.summonerName,
+                        summonerId: summoner.summonerId,
+                        accountId: result.data.accountId
+                      },
+                      { merge: true }
+                    );
+                })
+                .catch(e => {
+                  console.log("summoner", e);
+                  return "error";
+                });
+              setTimeout(resolve, 2000);
             });
-          return {
-            summonerName: summoner.summonerName,
-            summonerId: summoner.summonerId,
-            accountId: ""
-          };
+          }));
         });
-        this.props.addSummoner(newData);
+        // this.props.addSummoner(newData);
       })
       .catch(e => {
         console.log(e);
@@ -47,13 +64,16 @@ class HomePageContainer extends React.Component {
 
   getAccountId = summonerId => {
     const summonerUri = `/lol/summoner/v4/summoners/${summonerId}/?api_key=${process.env.REACT_APP_LEAGUE_API_KEY}`;
+    let accountId = "";
     axios(summonerUri)
       .then(result => {
-        console.log(result.data);
+        accountId = result.data.accountId;
+        console.log(accountId);
       })
       .catch(e => {
         console.log("summoner", e);
       });
+    return accountId;
   };
 
   render() {
