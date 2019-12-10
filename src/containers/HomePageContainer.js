@@ -91,7 +91,7 @@ class HomePageContainer extends React.Component {
     firebase
       .firestore()
       .collection("matches")
-      .doc()
+      .doc(summonerName + "-" + gameId)
       .set(
         {
           lane,
@@ -124,6 +124,7 @@ class HomePageContainer extends React.Component {
               .then(result => {
                 index = result.data.endIndex;
                 totalGames = result.data.totalGames;
+                console.log(index, totalGames);
                 return result.data.matches.map(match => {
                   match.summonerName = summoner.summonerName;
                   match.accountId = summoner.accountId;
