@@ -13,7 +13,6 @@ import firebase from "../firebase/firebase";
 
 class HomePageContainer extends React.Component {
   componentWillMount = () => {
-    //read from db
     this.getData();
   };
 
@@ -43,19 +42,11 @@ class HomePageContainer extends React.Component {
                     summonerId: summoner.summonerId,
                     accountId: result.data.accountId
                   });
-
-                  firebase
-                    .firestore()
-                    .collection("challenger")
-                    .doc(summoner.summonerName)
-                    .set(
-                      {
-                        summonerName: summoner.summonerName,
-                        summonerId: summoner.summonerId,
-                        accountId: result.data.accountId
-                      },
-                      { merge: true }
-                    );
+                  this.addToFirebase(
+                    summoner.summonerName,
+                    summoner.summonerId,
+                    result.data.accountId
+                  );
                 })
                 .catch(e => {
                   console.log("summoner", e);
@@ -69,6 +60,35 @@ class HomePageContainer extends React.Component {
       .catch(e => {
         console.log(e);
       });
+  };
+
+  addToFirebase = (summonerName, summonerId, accountId) => {
+    firebase
+      .firestore()
+      .collection("challenger")
+      .doc(summonerName)
+      .set(
+        {
+          summonerName: summonerName,
+          summonerId: summonerId,
+          accountId: accountId
+        },
+        { merge: true }
+      );
+  };
+  getMatches = accountId => {
+    if (this.props.summoner > 1) {
+      this.props.summoner.map(summoner => {
+        const uri = `/lol/match/v4/matchlists/by-account/${summoner.accountId}/?api_key=${process.env.REACT_APP_LEAGUE_API_KEY}`;
+        return axios(uri)
+          .then(result => {
+            console.log(result.data);
+          })
+          .catch(e => {
+            console.log(e);
+          });
+      });
+    }
   };
 
   render() {

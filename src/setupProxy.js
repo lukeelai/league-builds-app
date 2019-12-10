@@ -9,4 +9,9 @@ module.exports = app => {
     "/lol/summoner/v4/summoners/",
     proxy({ target: "https://na1.api.riotgames.com", changeOrigin: true })
   );
+
+  app.use(
+    "/lol/match/v4/matchlists/by-account/",
+    proxy({ target: "https://na1.api.riotgames.com", changeOrigin: true })
+  );
 };
