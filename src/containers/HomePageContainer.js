@@ -12,12 +12,24 @@ import HomePage from "../components/HomePage";
 import firebase from "../firebase/firebase";
 
 class HomePageContainer extends React.Component {
+  componentWillMount = () => {
+    //read from db
+    this.getData();
+  };
+
+  async getData() {
+    const snapshot = await firebase
+      .firestore()
+      .collection("challenger")
+      .get();
+    return snapshot.docs.map(doc => this.props.addSummoner(doc.data()));
+  }
+
   getSummoners = () => {
     const ranked = "RANKED_SOLO_5x5";
     const uri = `/lol/league/v4/challengerleagues/by-queue/${ranked}/?api_key=${process.env.REACT_APP_LEAGUE_API_KEY}`;
     let promise = Promise.resolve();
-    const db = firebase.firestore();
-    db.settings({ timestampsInSnapshots: true });
+    firebase.firestore().settings({ timestampsInSnapshots: true });
     axios(uri)
       .then(result => {
         result.data.entries.map(summoner => {
@@ -32,7 +44,9 @@ class HomePageContainer extends React.Component {
                     accountId: result.data.accountId
                   });
 
-                  db.collection("challenger")
+                  firebase
+                    .firestore()
+                    .collection("challenger")
                     .doc(summoner.summonerName)
                     .set(
                       {
